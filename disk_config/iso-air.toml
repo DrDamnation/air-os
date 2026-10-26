@@ -1,0 +1,22 @@
+# ISO di installazione air-os (Anaconda). Utente, password e disco si scelgono a schermo:
+# qui non c'è nessun segreto. Dopo l'installazione il sistema segue l'immagine firmata.
+[customizations.installer.kickstart]
+contents = """
+%post
+bootc switch --mutate-in-place --enforce-container-sigpolicy --transport registry ghcr.io/drdamnation/air-os:stable
+%end
+"""
+
+[customizations.installer.modules]
+enable = [
+  "org.fedoraproject.Anaconda.Modules.Storage",
+  "org.fedoraproject.Anaconda.Modules.Runtime",
+  "org.fedoraproject.Anaconda.Modules.Users",
+  "org.fedoraproject.Anaconda.Modules.Timezone",
+  "org.fedoraproject.Anaconda.Modules.Security"
+]
+disable = [
+  "org.fedoraproject.Anaconda.Modules.Network",
+  "org.fedoraproject.Anaconda.Modules.Services",
+  "org.fedoraproject.Anaconda.Modules.Subscription"
+]
