@@ -47,4 +47,17 @@ check "ricetta camera-firmware" grep -q '^camera-firmware:' /usr/share/ublue-os/
 check "path firmware nei kargs" grep -q 'firmware_class.path=/var/lib/air-os/firmware' /usr/lib/bootc/kargs.d/10-air.toml
 check "niente akmod/kernel-devel rimasti" ! rpm -q akmod-facetimehd kernel-devel
 
+section "Tuning CachyOS"
+check "cachyos-settings" rpm -q cachyos-settings
+check "zram-generator-defaults rimosso" ! rpm -q zram-generator-defaults
+check "zram zstd" grep -Eq '^compression-algorithm *= *zstd' /usr/lib/systemd/zram-generator.conf
+check "zram = RAM" grep -Eq '^zram-size *= *ram$' /usr/lib/systemd/zram-generator.conf
+check "swappiness 100" grep -rEq '^vm.swappiness *= *100' /usr/lib/sysctl.d/
+check "page-cluster 0" grep -rEq '^vm.page-cluster *= *0' /usr/lib/sysctl.d/
+check "scx installato" rpm -q scx-scheds
+scx_attivo() { systemctl is-enabled scx.service || systemctl is-enabled scx_loader.service; }
+check "scx spento" ! scx_attivo
+check "niente ananicy" ! rpm -q ananicy-cpp
+check "SATA in risparmio (dopo la regola CachyOS)" grep -q 'med_power_with_dipm' /usr/lib/udev/rules.d/51-air-sata.rules
+
 finish

@@ -1,0 +1,6 @@
+# cachyos-settings (50-sata.rules) mette il link SATA a max_performance: su batteria
+# conviene il risparmio energetico. Questa regola gira dopo e lo rimette.
+ACTION=="add", SUBSYSTEM=="scsi_host", KERNEL=="host*", \
+    ATTR{link_power_management_supported}=="1", \
+    ATTR{link_power_management_policy}=="*", \
+    ATTR{link_power_management_policy}="med_power_with_dipm"
