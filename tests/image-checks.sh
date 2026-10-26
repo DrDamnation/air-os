@@ -25,4 +25,15 @@ check "chiave pubblica air-os" test -s /etc/pki/containers/air-os.pub
 check "policy firma air-os" jq -e '.transports.docker["ghcr.io/drdamnation/air-os"][0].type == "sigstoreSigned"' /etc/containers/policy.json
 check "sigstore attachments air-os" grep -q 'ghcr.io/drdamnation/air-os' /etc/containers/registries.d/air-os.yaml
 
+section "Hardware Mac"
+check "wl per il kernel dell'immagine ($KVER)" modinfo -k "$KVER" wl
+check "rtw88_8822bu presente" modinfo -k "$KVER" rtw88_8822bu
+check "r8152 presente" modinfo -k "$KVER" r8152
+check "karg reboot=pci" grep -q 'reboot=pci' /usr/lib/bootc/kargs.d/10-air.toml
+check "unit sveglie abilitata" systemctl is-enabled air-disable-wakeup.service
+check "regola thunderbolt" test -f /usr/lib/udev/rules.d/90-air-thunderbolt.rules
+check "tuned-ppd presente" rpm -q tuned-ppd
+check "tuned abilitato" systemctl is-enabled tuned.service
+check "niente TLP" ! rpm -q tlp
+
 finish

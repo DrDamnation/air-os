@@ -1,0 +1,2 @@
+# Thunderbolt 2 (Falcon Ridge): risparmio energetico a runtime quando non c'è niente collegato.
+ACTION=="add|bind", SUBSYSTEM=="pci", DRIVER=="thunderbolt", ATTR{power/control}="auto"

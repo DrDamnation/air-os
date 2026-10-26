@@ -1,0 +1,9 @@
+#!/bin/bash
+# Scrivere un nome in /proc/acpi/wakeup lo alterna: lo scrivo solo se è *enabled.
+set -u
+for dev in ${AIR_WAKEUP_DISABLE:-LID0 XHC1}; do
+    if grep -qE "^${dev}[[:space:]].*\*enabled" /proc/acpi/wakeup; then
+        echo "$dev" > /proc/acpi/wakeup
+        echo "sveglia disabilitata: $dev"
+    fi
+done

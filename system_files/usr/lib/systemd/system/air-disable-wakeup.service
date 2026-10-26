@@ -1,0 +1,13 @@
+[Unit]
+Description=air-os: niente risvegli spuri da coperchio e USB (LID0, XHC1)
+After=sysinit.target
+
+[Service]
+Type=oneshot
+# Per cambiare la lista: drop-in con Environment=AIR_WAKEUP_DISABLE="XHC1"
+Environment=AIR_WAKEUP_DISABLE="LID0 XHC1"
+ExecStart=/usr/libexec/air-disable-wakeup
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

@@ -9,7 +9,8 @@ FROM ghcr.io/ublue-os/base-main:44
 
 ARG GIT_SHA=unknown
 
-RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+# RPM dei moduli precompilati da Universal Blue (kmod-wl per il Wi-Fi Broadcom)
+RUN --mount=type=bind,from=ctx,source=/,target=/ctx     --mount=type=bind,from=ghcr.io/ublue-os/akmods:main-44,source=/rpms,target=/tmp/akmods-rpms \
     --mount=type=cache,dst=/var/cache \
     --mount=type=cache,dst=/var/log \
     --mount=type=tmpfs,dst=/tmp \
