@@ -1,0 +1,9 @@
+#!/bin/bash
+# Leggibilità al sole: passa Dux Shell al tema chiaro e porta la luminosità al massimo.
+# Rilanciato, torna al tema scuro (la luminosità resta com'è).
+set -u
+mode=$(dms ipc call theme toggle 2>/dev/null | tail -1)
+if [[ "$mode" == "light" ]]; then
+    brightnessctl -q set 100%
+fi
+echo "tema: ${mode:-?}"

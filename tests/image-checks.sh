@@ -60,4 +60,19 @@ check "scx spento" ! scx_attivo
 check "niente ananicy" ! rpm -q ananicy-cpp
 check "SATA in risparmio (dopo la regola CachyOS)" grep -q 'med_power_with_dipm' /usr/lib/udev/rules.d/51-air-sata.rules
 
+section "Desktop"
+for p in niri dms dms-greeter quickshell matugen greetd foot Thunar xwayland-satellite xdg-desktop-portal-gnome gnome-keyring; do
+    check "pacchetto $p" rpm -q "$p"
+done
+check "niente cava" ! rpm -q cava
+check "greetd abilitato" systemctl is-enabled greetd.service
+check "greeter avvia niri" grep -q 'dms-greeter --command niri' /etc/greetd/config.toml
+check "dms utente attivo per i nuovi utenti" test -L /etc/skel/.config/systemd/user/graphical-session.target.wants/dms.service
+check "cava spento in DMS" grep -q 'DMS_DISABLE_CAVA=1' /usr/lib/environment.d/50-air-dms.conf
+check "app-id nuovo nelle regole niri" grep -Eq 'app-id=.*dev.*duxlabs.*shell' /etc/skel/.config/niri/config.kdl
+check "touchpad configurato" grep -q 'touchpad' /etc/skel/.config/niri/config.kdl
+check "scorciatoia contrasto" grep -q 'air-contrast' /etc/skel/.config/niri/config.kdl
+check "air-contrast eseguibile" test -x /usr/bin/air-contrast
+check "config niri valida" niri validate -c /etc/skel/.config/niri/config.kdl
+
 finish
