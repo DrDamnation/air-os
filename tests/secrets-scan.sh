@@ -5,7 +5,8 @@ set -u
 dirs=("$@")
 (( ${#dirs[@]} )) || dirs=(system_files build_files disk_config)
 
-pattern='(psk|password|passwd|secret)[[:space:]]*[=:][[:space:]]*["'"'"']?[^"'"'"'[:space:]]|tskey-|BEGIN [A-Z ]*PRIVATE KEY|github_pat_|gh[pousr]_[A-Za-z0-9]{20,}'
+# Un valore che inizia con $ è una variabile di shell, non un segreto scritto nel file.
+pattern='(psk|password|passwd|secret)[[:space:]]*[=:][[:space:]]*["'"'"']?[^"'"'"'$[:space:]]|tskey-|BEGIN [A-Z ]*PRIVATE KEY|github_pat_|gh[pousr]_[A-Za-z0-9]{20,}'
 
 if hits=$(grep -rInEi "$pattern" "${dirs[@]}" 2>/dev/null); then
     echo "Possibili segreti trovati:"

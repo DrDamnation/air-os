@@ -34,3 +34,9 @@ teardown() { rm -rf "$D"; }
     run bash tests/secrets-scan.sh "$D"
     [ "$status" -eq 1 ]
 }
+
+@test "variabile di shell, non un valore: passa" {
+    printf 'psk=$(genera)\necho "password: $psk"\n' > "$D/script"
+    run bash tests/secrets-scan.sh "$D"
+    [ "$status" -eq 0 ]
+}

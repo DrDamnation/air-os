@@ -37,3 +37,14 @@ camera:
         fi
         sudo modprobe facetimehd && echo "Webcam accesa"
     fi
+
+# Prepara l'utente per il campo: accesso alle porte seriali USB (serve un nuovo login)
+[group('air-os')]
+campo-setup:
+    #!/usr/bin/bash
+    set -euo pipefail
+    if ! grep -q '^dialout:' /etc/group; then
+        grep '^dialout:' /usr/lib/group | sudo tee -a /etc/group >/dev/null
+    fi
+    sudo usermod -aG dialout "$USER"
+    echo "Fatto: $USER è nel gruppo dialout. Esci e rientra per usare picocom/tio/minicom."

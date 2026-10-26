@@ -75,4 +75,15 @@ check "scorciatoia contrasto" grep -q 'air-contrast' /etc/skel/.config/niri/conf
 check "air-contrast eseguibile" test -x /usr/bin/air-contrast
 check "config niri valida" niri validate -c /etc/skel/.config/niri/config.kdl
 
+section "Kit da campo"
+for p in openssh-clients nmap arp-scan iperf3 mtr iw wavemon ethtool tcpdump wireshark-cli picocom tio minicom tailscale git bats; do
+    check "pacchetto $p" rpm -q "$p"
+done
+check "campo eseguibile" test -x /usr/bin/campo
+check "campo risponde" bash -c '/usr/bin/campo --help | grep -q "Uso:"'
+check "regola seriale" grep -q 'dialout' /usr/lib/udev/rules.d/90-air-serial.rules
+check "tailscaled abilitato" systemctl is-enabled tailscaled.service
+check "repo tailscale spento" ! grep -q '^enabled=1' /etc/yum.repos.d/tailscale.repo
+check "ricetta campo-setup" grep -q '^campo-setup:' /usr/share/ublue-os/just/60-custom.just
+
 finish
