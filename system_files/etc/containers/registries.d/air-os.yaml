@@ -1,0 +1,3 @@
+docker:
+  ghcr.io/drdamnation/air-os:
+    use-sigstore-attachments: true

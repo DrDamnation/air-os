@@ -41,6 +41,13 @@ jobs:
       - name: Install just
         uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 #v4.0.0
 
+      - name: Scansione segreti e test bats
+        shell: bash
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq bats
+          bash tests/secrets-scan.sh
+          bats tests/*.bats
+
       - name: Check Just Syntax
         shell: bash
         run: |
@@ -73,6 +80,11 @@ jobs:
           just build \
             ${IMAGE_NAME} \
             ${DEFAULT_TAG}
+
+      - name: Test immagine
+        shell: bash
+        run: |
+          podman run --rm "localhost/${IMAGE_NAME}:${DEFAULT_TAG}"             bash /usr/share/air-os/tests/image-checks.sh
 
       # This is optional, this provides smaller delta updates
       - name: Rechunk with rpm-ostree
