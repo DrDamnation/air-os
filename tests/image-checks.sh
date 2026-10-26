@@ -86,4 +86,24 @@ check "tailscaled abilitato" systemctl is-enabled tailscaled.service
 check "repo tailscale spento" ! grep -q '^enabled=1' /etc/yum.repos.d/tailscale.repo
 check "ricetta campo-setup" grep -q '^campo-setup:' /usr/share/ublue-os/just/60-custom.just
 
+section "RustDesk solo locale"
+RD=/usr/share/air-os/rustdesk/RustDesk2.toml
+check "rustdesk installato" rpm -q rustdesk
+check "accesso IP diretto" grep -q "^direct-server = 'Y'" "$RD"
+check "porta diretta 21118" grep -q "^direct-access-port = '21118'" "$RD"
+check "niente rendezvous pubblico" grep -q "^custom-rendezvous-server = '127.0.0.1'" "$RD"
+check "niente relay pubblico" grep -q "^relay-server = '127.0.0.1'" "$RD"
+for net in 192.168.0.0/16 10.0.0.0/8 172.16.0.0/12 100.64.0.0/10; do
+    check "whitelist $net" grep -q "^whitelist = '.*$net" "$RD"
+done
+check "config utente da skel" cmp -s "$RD" /etc/skel/.config/rustdesk/RustDesk2.toml
+check "config root via tmpfiles" grep -q "$RD" /usr/lib/tmpfiles.d/air-rustdesk.conf
+check "porta aperta solo da reti private/Tailscale" bash -c "firewall-offline-cmd --zone=public --list-rich-rules | grep -c 'rustdesk-direct' | grep -qx 4"
+check "porta NON aperta a tutti" bash -c "! firewall-offline-cmd --zone=public --list-services | grep -qw rustdesk-direct"
+rd_ha_password() { grep -Eqi "^(password|permanent-password|salt|key) *= *'[^']+'" "$RD"; }
+check "toml RustDesk presente" test -s "$RD"
+check "nessuna password nel toml" ! rd_ha_password
+check "ricetta rustdesk-password" grep -q '^rustdesk-password:' /usr/share/ublue-os/just/60-custom.just
+check "niente /opt rotto" bash -c "test ! -e /opt/rustdesk || test -x /usr/bin/rustdesk"
+
 finish

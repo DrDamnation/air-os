@@ -14,3 +14,7 @@ CACHYOS_ADDONS_COPR=bieszczaders/kernel-cachyos-addons
 # finché i suoi non sono pronti: quando migrano, si cambiano solo queste due righe.
 DMS_COPR=avengemedia/dms
 DMS_DEPS_COPR=avengemedia/danklinux
+
+# RustDesk: RPM ufficiale da GitHub, versione e sha256 fissati (digest della release)
+RUSTDESK_VERSION=1.5.0
+RUSTDESK_SHA256=96e4246d62a992630dacac3472f356ad517a5ef6d0cd8ea02b5648bc1cabff26

@@ -48,3 +48,14 @@ campo-setup:
     fi
     sudo usermod -aG dialout "$USER"
     echo "Fatto: $USER è nel gruppo dialout. Esci e rientra per usare picocom/tio/minicom."
+
+# Imposta la password permanente di RustDesk (non è mai nel repository)
+[group('air-os')]
+rustdesk-password:
+    #!/usr/bin/bash
+    set -euo pipefail
+    read -rsp "Nuova password RustDesk: " p1; echo
+    read -rsp "Ripetila: " p2; echo
+    [[ "$p1" == "$p2" && ${#p1} -ge 8 ]] || { echo "Non coincidono o meno di 8 caratteri"; exit 2; }
+    sudo rustdesk --password "$p1" >/dev/null
+    echo "Password impostata. Dal PC: RustDesk → IP del Mac (Tailscale 100.x o LAN)."
