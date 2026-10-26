@@ -11,3 +11,20 @@ dnf5 install -y \
 
 # Il modulo deve esistere per il kernel dell'immagine, altrimenti build rossa
 modinfo -k "$KVER" wl >/dev/null
+
+# Webcam FaceTime HD: compilata qui dai sorgenti. Non uso il COPR perché il suo
+# pacchetto obbliga a installare il firmware Apple (vietato nell'immagine pubblica)
+# e carica il modulo all'avvio. Il modulo resta in blacklist: si carica con `ujust camera`.
+dnf5 install -y gcc make "/tmp/kernel-rpms/kernel-devel-${KVER}.rpm"
+src=$(mktemp -d)
+curl -fsSL -o "$src/ft.tgz" \
+    "https://github.com/patjak/facetimehd/archive/refs/tags/${FACETIMEHD_VERSION}.tar.gz"
+echo "${FACETIMEHD_SHA256}  $src/ft.tgz" | sha256sum -c -
+tar -xzf "$src/ft.tgz" -C "$src"
+make -C "/usr/src/kernels/${KVER}" M="$src/facetimehd-${FACETIMEHD_VERSION}" modules
+install -Dm644 "$src/facetimehd-${FACETIMEHD_VERSION}/facetimehd.ko" \
+    "/usr/lib/modules/${KVER}/extra/facetimehd/facetimehd.ko"
+depmod -a "$KVER"
+modinfo -k "$KVER" facetimehd >/dev/null
+rm -rf "$src"
+dnf5 remove -y gcc make kernel-devel

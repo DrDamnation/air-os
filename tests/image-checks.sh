@@ -36,4 +36,15 @@ check "tuned-ppd presente" rpm -q tuned-ppd
 check "tuned abilitato" systemctl is-enabled tuned.service
 check "niente TLP" ! rpm -q tlp
 
+section "Webcam"
+check "facetimehd per il kernel" modinfo -k "$KVER" facetimehd
+check "facetimehd in blacklist" grep -q '^blacklist facetimehd' /usr/lib/modprobe.d/air-facetimehd.conf
+firmware_apple() { find /usr/lib/firmware -path '*facetimehd*' | grep -q .; }
+check "firmware Apple NON nell'immagine" ! firmware_apple
+check "ricette ujust air importate" grep -q '60-custom.just' /usr/share/ublue-os/justfile
+check "ricetta camera" grep -q '^camera:' /usr/share/ublue-os/just/60-custom.just
+check "ricetta camera-firmware" grep -q '^camera-firmware:' /usr/share/ublue-os/just/60-custom.just
+check "path firmware nei kargs" grep -q 'firmware_class.path=/var/lib/air-os/firmware' /usr/lib/bootc/kargs.d/10-air.toml
+check "niente akmod/kernel-devel rimasti" ! rpm -q akmod-facetimehd kernel-devel
+
 finish

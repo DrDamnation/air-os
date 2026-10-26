@@ -1,1 +1,1 @@
-kargs = ["reboot=pci"]
+kargs = ["reboot=pci", "firmware_class.path=/var/lib/air-os/firmware"]
