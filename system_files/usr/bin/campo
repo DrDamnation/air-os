@@ -1,0 +1,123 @@
+#!/bin/bash
+# campo: collegarsi a un apparato sul posto (antenna, router) senza perdere Internet.
+#   campo ip <indirizzo/prefisso> [IFACE]   IP fisso sull'adattatore
+#   campo dhcp [IFACE]                      il Mac riceve l'indirizzo dall'apparato
+#   campo condividi [IFACE]                 il Mac dà indirizzo e Internet all'apparato
+#   campo stato                             interfacce, IP, Internet, Tailscale
+#   campo spegni [IFACE]                    toglie il profilo campo
+# IFACE di default: l'adattatore USB Ethernet (enx*). Internet resta sul Wi-Fi interno:
+# i profili campo non prendono mai la route di default.
+# Exit: 0 ok, 2 errore d'uso o interfaccia, 3 rifiuto per sicurezza.
+set -uo pipefail
+
+SYSFS="${CAMPO_SYSFS:-/sys/class/net}"
+DRY="${CAMPO_DRY_RUN:-0}"
+
+die()    { echo "campo: $2" >&2; exit "$1"; }
+nm()     { if [[ "$DRY" == 1 ]]; then echo "nmcli $*"; else nmcli "$@"; fi; }
+nm_try() { if [[ "$DRY" == 1 ]]; then echo "nmcli $*"; else nmcli "$@" >/dev/null 2>&1 || true; fi; }
+
+uso() {
+    sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//'
+    echo "Uso: campo ip|dhcp|condividi|stato|spegni ..."
+}
+
+driver_of()   { basename "$(readlink -f "$SYSFS/$1/device/driver" 2>/dev/null)" 2>/dev/null; }
+is_wireless() { [[ -d "$SYSFS/$1/wireless" || -e "$SYSFS/$1/phy80211" ]]; }
+default_iface() {
+    if [[ -n "${CAMPO_DEFAULT_IFACE+x}" ]]; then echo "$CAMPO_DEFAULT_IFACE"; return; fi
+    ip route show default 2>/dev/null | awk '{for(i=1;i<NF;i++) if($i=="dev"){print $(i+1); exit}}'
+}
+
+# Sceglie e controlla l'interfaccia: quella passata o il primo adattatore USB Ethernet.
+pick_iface() {
+    local want="${1:-}"
+    if [[ -z "$want" ]]; then
+        want=$(ls "$SYSFS" 2>/dev/null | grep '^enx' | head -1)
+        [[ -n "$want" ]] || die 2 "nessun adattatore USB Ethernet collegato (collegalo o indica l'interfaccia, es. campo dhcp wlx...)"
+    fi
+    [[ -e "$SYSFS/$want" ]] || die 2 "interfaccia $want non trovata (vedi 'campo stato')"
+    IFACE="$want"
+    CON="campo-$IFACE"
+}
+
+valid_cidr() {
+    local ip="${1%/*}" pre="${1#*/}" o
+    [[ "$1" == */* && "$pre" =~ ^[0-9]{1,2}$ && "$pre" -le 32 ]] || return 1
+    [[ "$ip" =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})$ ]] || return 1
+    for o in "${BASH_REMATCH[@]:1}"; do (( 10#$o <= 255 )) || return 1; done
+}
+
+need_ethernet() {
+    is_wireless "$IFACE" && die 2 "$IFACE è Wi-Fi: collegati alla rete dell'apparato dal pannello reti; 'campo ip/dhcp' è per il cavo"
+    return 0
+}
+
+cmd_ip() {
+    local cidr="${1:-}"
+    valid_cidr "$cidr" || die 2 "indirizzo non valido: '$cidr' (esempio: campo ip 192.168.1.10/24)"
+    pick_iface "${2:-}"; need_ethernet
+    nm_try con delete "$CON"
+    nm con add type ethernet ifname "$IFACE" con-name "$CON" ipv4.method manual ipv4.addresses "$cidr" \
+        ipv4.never-default yes connection.autoconnect no ipv6.method disabled || die 2 "nmcli non ha creato il profilo"
+    nm con up "$CON"
+}
+
+cmd_dhcp() {
+    pick_iface "${1:-}"; need_ethernet
+    nm_try con delete "$CON"
+    nm con add type ethernet ifname "$IFACE" con-name "$CON" ipv4.method auto \
+        ipv4.never-default yes ipv4.ignore-auto-dns yes connection.autoconnect no ipv6.method disabled
+    nm con up "$CON"
+}
+
+cmd_condividi() {
+    pick_iface "${1:-}"
+    [[ "$(driver_of "$IFACE")" == wl ]] && die 3 "non condivido il Wi-Fi interno ($IFACE): è quello che porta Internet. Usa il cavo o la chiavetta."
+    [[ "$IFACE" == "$(default_iface)" ]] && die 3 "$IFACE porta Internet in questo momento: condividerla ti lascerebbe offline"
+    nm_try con delete "$CON"
+    if is_wireless "$IFACE"; then
+        local psk
+        psk=$(LC_ALL=C tr -dc 'a-km-z2-9' </dev/urandom | head -c 12)
+        nm con add type wifi ifname "$IFACE" con-name "$CON" ssid air-campo \
+            802-11-wireless.mode ap 802-11-wireless.band bg \
+            wifi-sec.key-mgmt wpa-psk wifi-sec.psk "$psk" \
+            ipv4.method shared connection.autoconnect no ipv6.method disabled
+        echo "Hotspot 'air-campo', password: $psk"
+    else
+        nm con add type ethernet ifname "$IFACE" con-name "$CON" ipv4.method shared \
+            connection.autoconnect no ipv6.method disabled
+    fi
+    nm con up "$CON"
+    echo "L'apparato riceve un indirizzo 10.42.0.x; il Mac è 10.42.0.1"
+}
+
+cmd_spegni() {
+    pick_iface "${1:-}"
+    nm_try con down "$CON"
+    nm con delete "$CON"
+}
+
+cmd_stato() {
+    echo "== Interfacce"
+    ip -brief address 2>/dev/null | grep -v '^lo '
+    echo; echo "== Route di default"
+    ip route show default 2>/dev/null || true
+    echo; echo "== Profili campo"
+    nmcli -t -f NAME,DEVICE,STATE con show --active 2>/dev/null | grep '^campo-' || echo "(nessuno)"
+    echo; echo -n "== Internet: "
+    if ping -c1 -W2 1.1.1.1 >/dev/null 2>&1; then echo "sì"; else echo "NO"; fi
+    echo -n "== Tailscale: "
+    if tailscale status --peers=false >/dev/null 2>&1; then echo "collegato"; else echo "non collegato"; fi
+    return 0
+}
+
+case "${1:-}" in
+    ip)        shift; cmd_ip "$@" ;;
+    dhcp)      shift; cmd_dhcp "$@" ;;
+    condividi) shift; cmd_condividi "$@" ;;
+    spegni)    shift; cmd_spegni "$@" ;;
+    stato)     cmd_stato ;;
+    -h|--help|aiuto) uso ;;
+    *)         uso; exit 2 ;;
+esac
