@@ -85,6 +85,10 @@ check "regola seriale" grep -q 'dialout' /usr/lib/udev/rules.d/90-air-serial.rul
 check "tailscaled abilitato" systemctl is-enabled tailscaled.service
 check "repo tailscale spento" ! grep -q '^enabled=1' /etc/yum.repos.d/tailscale.repo
 check "ricetta campo-setup" grep -q '^campo-setup:' /usr/share/ublue-os/just/60-custom.just
+check "air-config eseguibile" test -x /usr/bin/air-config
+check "air-config risponde" bash -c '/usr/bin/air-config boh 2>&1 | grep -q "uso: air-config"'
+check "ssh-keygen per la deploy key" command -v ssh-keygen
+check "ricetta air-config" grep -q '^air-config:' /usr/share/ublue-os/just/60-custom.just
 
 section "RustDesk solo locale"
 RD=/usr/share/air-os/rustdesk/RustDesk2.toml

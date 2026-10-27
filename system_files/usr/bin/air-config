@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# Config personali dal repo privato DrDamnation/air-config.
+#   air-config chiave     crea la deploy key (sola lettura) e la mostra da aggiungere su GitHub
+#   air-config [aggiorna] clona o aggiorna ~/air-config ed esegue il suo applica.sh
+set -euo pipefail
+
+URL=${AIR_CONFIG_URL:-git@github-air-config:DrDamnation/air-config.git}
+DIR=${AIR_CONFIG_DIR:-$HOME/air-config}
+KEY=$HOME/.ssh/air-config
+
+die() { echo "air-config: $*" >&2; exit "${2:-1}"; }
+
+chiave() {
+    mkdir -p "$HOME/.ssh" && chmod 700 "$HOME/.ssh"
+    [[ -f $KEY ]] || ssh-keygen -q -t ed25519 -N '' -C "air-config@$(hostname 2>/dev/null || echo air)" -f "$KEY"
+    if ! grep -qx 'Host github-air-config' "$HOME/.ssh/config" 2>/dev/null; then
+        printf '\nHost github-air-config\n    HostName github.com\n    User git\n    IdentityFile ~/.ssh/air-config\n    IdentitiesOnly yes\n' >> "$HOME/.ssh/config"
+        chmod 600 "$HOME/.ssh/config"
+    fi
+    echo "Aggiungi questa chiave su GitHub > air-config > Settings > Deploy keys (sola lettura):"
+    cat "$KEY.pub"
+}
+
+aggiorna() {
+    if [[ -d $DIR/.git ]]; then
+        git -C "$DIR" pull -q --ff-only || die "pull fallito in $DIR (modifiche locali?)"
+    else
+        git clone -q "$URL" "$DIR" 2>/dev/null \
+            || die "non riesco a scaricare $URL. Chiave non ancora aggiunta su GitHub? Esegui: air-config chiave"
+    fi
+    if [[ -x $DIR/applica.sh ]]; then "$DIR/applica.sh"; fi
+    echo "air-config aggiornato in $DIR"
+}
+
+case ${1:-aggiorna} in
+    chiave) chiave ;;
+    aggiorna) aggiorna ;;
+    *) die "uso: air-config [aggiorna|chiave]" 2 ;;
+esac

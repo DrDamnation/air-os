@@ -59,3 +59,14 @@ rustdesk-password:
     [[ "$p1" == "$p2" && ${#p1} -ge 8 ]] || { echo "Non coincidono o meno di 8 caratteri"; exit 2; }
     sudo rustdesk --password "$p1" >/dev/null
     echo "Password impostata. Dal PC: RustDesk → IP del Mac (Tailscale 100.x o LAN)."
+
+# Config personali dal repo privato air-config (la prima volta crea la chiave da aggiungere su GitHub)
+[group('air-os')]
+air-config:
+    #!/usr/bin/bash
+    set -euo pipefail
+    if [[ ! -f ~/.ssh/air-config ]]; then
+        air-config chiave
+        read -rp "Aggiunta su GitHub? Invio per continuare " _
+    fi
+    air-config aggiorna
