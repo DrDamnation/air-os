@@ -1,0 +1,8 @@
+[Unit]
+Description=air-os: controlla le reti Wi-Fi salvate
+
+[Path]
+PathChanged=/etc/NetworkManager/system-connections
+
+[Install]
+WantedBy=multi-user.target

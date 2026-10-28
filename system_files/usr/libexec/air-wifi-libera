@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Le reti Wi-Fi salvate non restano legate a una scheda: così la stessa rete
+# funziona sia con il Wi-Fi interno sia con la chiavetta D-Link.
+# Lanciato da air-wifi-libera.path a ogni modifica delle reti salvate.
+set -uo pipefail
+NMCLI=${NMCLI:-nmcli}
+
+"$NMCLI" -t -f UUID,TYPE con show | while IFS=: read -r uuid tipo; do
+    [[ $tipo == 802-11-wireless ]] || continue
+    scheda=$("$NMCLI" -g connection.interface-name con show uuid "$uuid")
+    [[ -n $scheda ]] || continue
+    "$NMCLI" con modify uuid "$uuid" connection.interface-name ""
+    echo "rete $uuid slegata da $scheda"
+done

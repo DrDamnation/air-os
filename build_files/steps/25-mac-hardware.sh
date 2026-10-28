@@ -7,3 +7,4 @@ dnf5 install -y tuned tuned-ppd
 systemctl enable tuned.service
 
 systemctl enable air-disable-wakeup.service
+systemctl enable air-wifi-libera.path
