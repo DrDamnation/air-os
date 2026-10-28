@@ -1,0 +1,8 @@
+// air-os: chi è amministratore (wheel), seduto davanti al Mac, gestisce le reti
+// senza password: sul campo si cambia rete spesso.
+polkit.addRule(function(action, subject) {
+    if (action.id.indexOf("org.freedesktop.NetworkManager.") == 0 &&
+        subject.isInGroup("wheel") && subject.local && subject.active) {
+        return polkit.Result.YES;
+    }
+});

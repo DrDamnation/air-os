@@ -1,0 +1,8 @@
+[Unit]
+Description=air-os: reti Wi-Fi non legate a una scheda
+After=NetworkManager.service
+Requires=NetworkManager.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/air-wifi-libera

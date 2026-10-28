@@ -31,6 +31,9 @@ check "rtw88_8822bu presente" modinfo -k "$KVER" rtw88_8822bu
 check "r8152 presente" modinfo -k "$KVER" r8152
 check "root btrfs dichiarata per bootc install e ISO" bash -c 'bootc install print-configuration | jq -e ".filesystem.root.type == \"btrfs\""'
 check "tastiera US in niri (Mac americano)" grep -q 'layout "us"' /etc/skel/.config/niri/config.kdl
+check "reti Wi-Fi slegate dalla scheda: path attivo" systemctl is-enabled air-wifi-libera.path
+check "air-wifi-libera eseguibile" test -x /usr/libexec/air-wifi-libera
+check "polkit: reti senza password per wheel" grep -q 'org.freedesktop.NetworkManager.' /usr/share/polkit-1/rules.d/50-air-networkmanager.rules
 check "karg reboot=pci" grep -q 'reboot=pci' /usr/lib/bootc/kargs.d/10-air.toml
 check "unit sveglie abilitata" systemctl is-enabled air-disable-wakeup.service
 check "regola thunderbolt" test -f /usr/lib/udev/rules.d/90-air-thunderbolt.rules
