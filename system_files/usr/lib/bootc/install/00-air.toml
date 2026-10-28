@@ -1,0 +1,3 @@
+# Filesystem della root per bootc install e per il builder dell'ISO (Anaconda la cifra con LUKS)
+[install.filesystem.root]
+type = "btrfs"
