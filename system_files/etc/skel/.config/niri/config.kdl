@@ -4,7 +4,7 @@
 input {
     keyboard {
         xkb {
-            layout "it"
+            layout "us"
         }
         numlock
     }

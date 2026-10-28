@@ -2,7 +2,28 @@
 # qui non c'è nessun segreto. Dopo l'installazione il sistema segue l'immagine firmata.
 [customizations.installer.kickstart]
 contents = """
+%pre-install
+# Un grub.cfg di un'altra distro su EFI/ fa scegliere a ostree il vecchio metodo GRUB
+# (grub2-mkconfig) e l'installazione fallisce: lo sposto fuori da EFI/, senza cancellarlo.
+for d in /mnt/sysimage/boot/efi/EFI/*/; do
+    n=$(basename "$d")
+    case "$n" in fedora|BOOT|APPLE) continue ;; esac
+    if [ -f "$d/grub.cfg" ]; then
+        mkdir -p /mnt/sysimage/boot/efi/vecchi-bootloader
+        mv "$d" /mnt/sysimage/boot/efi/vecchi-bootloader/
+    fi
+done
+%end
+
 %post
+# Chiave pubblica di Daniele (la stessa di github.com/DrDamnation.keys): SSH subito dopo l'installazione.
+if id daniele >/dev/null 2>&1; then
+    h=$(getent passwd daniele | cut -d: -f6)
+    install -d -m 700 -o daniele -g daniele "$h/.ssh"
+    echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILSgnGqraMQ8+DyAZzPB9Nkz5zhgqHdPNMeUq1Ohd3df" >> "$h/.ssh/authorized_keys"
+    chown daniele:daniele "$h/.ssh/authorized_keys"
+    chmod 600 "$h/.ssh/authorized_keys"
+fi
 bootc switch --mutate-in-place --enforce-container-sigpolicy --transport registry ghcr.io/drdamnation/air-os:stable
 %end
 """
